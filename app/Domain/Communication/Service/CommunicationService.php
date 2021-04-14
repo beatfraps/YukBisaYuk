@@ -2,7 +2,9 @@
 
 namespace App\Domain\Communication\Service;
 
+use App\Domain\Admin\Entity\CommentForum;
 use App\Domain\Communication\Dao\CommunicationDao;
+use App\Domain\Communication\Entity\ForumLike;
 use App\Domain\Communication\Entity\Service;
 
 class CommunicationService
@@ -43,6 +45,46 @@ class CommunicationService
     public function userService($user_id)
     {
         return $this->dao->userService($user_id);
+    }
+
+    public function findAllForum()
+    {
+        return $this->dao->getAllForum();
+    }
+
+    public function findForumbyId($id)
+    {
+        return $this->dao->getForumbyId($id);
+    }
+
+    public function newLike()
+    {
+        return $this->dao->newLike();
+    }
+
+    public function saveLike(ForumLike $like)
+    {
+        return $this->dao->saveLike($like);
+    }
+
+    public function findLikeBy($idForum, $userid)
+    {
+        return $this->dao->getLikeby($idForum, $userid);
+    }
+
+    public function delLike(ForumLike $like)
+    {
+        return $this->dao->deleteLike($like);
+    }
+
+    public function saveComment(CommentForum $comment)
+    {
+        return $this->dao->saveComment($comment);
+    }
+
+    public function newComment()
+    {
+        return $this->dao->newComment();
     }
 
 }

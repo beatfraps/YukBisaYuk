@@ -2,15 +2,11 @@
 
 namespace App\Http\Livewire;
 
-use \App\Domain\Event\Entity\User;
-use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 use App\Domain\Communication\Service\CommunicationService;
-use App\Http\Controllers\ServiceController;
 
 class Message extends Component
 {
-
     public $message;
     public $users;
     public $clicked_user;
@@ -70,5 +66,4 @@ class Message extends Component
         $this->clicked_user = $this->service->findUserbyId($user_id);
         $this->messages = $this->service->userService($user_id);
     }
-
 }

@@ -1,7 +1,7 @@
 @extends('layout.app')
 
 @section('content')
-
+@include('layout.message')
 {{-- <div class="container">  --}}
 <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
   <ol class="carousel-indicators">
@@ -131,20 +131,19 @@
     </div>
     {{-- @endforeach --}}
   </div>
-  @if(Auth::check())
-  @if(auth()->user()->role != 'admin')
-    <button id="btnopenchat" class="open-button" onclick="openChat()">Chat</button>
-    <button id="btnclosechat" class="open-button" onclick="closeChat()" style="display:block;">Chat</button>
-  @endif
-  @endif
 
-  <!-- <div class="card" style="width: 18rem;"> -->
-  @if(Auth::check())
-  <div id="myChat">
-    @livewire('message', ['users' => $users, 'messages' => $messages ?? null])
-  </div>
-  @endif
-  <!-- </div> -->
+    @if($user->role != ADMIN && $user->role != GUEST )
+      <button id="btnopenchat" class="open-button" onclick="openChat()">Chat</button>
+      <button id="btnclosechat" class="open-button" onclick="closeChat()" style="display:block;">Chat</button>
+      
+      <div id="myChat">
+        @livewire('message', ['users' => $users, 'messages' => $messages ?? null])
+      </div>
+    @endif
+    <!-- <div class="card" style="width: 18rem;"> -->
+    <!-- </div> -->
+
+
 
   <script>
     function openChat() {

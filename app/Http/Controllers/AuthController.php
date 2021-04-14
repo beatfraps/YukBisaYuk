@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Domain\Event\Entity\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\Auth;
+use App\Domain\Event\Service\EventService;
 
 class AuthController extends Controller
 {
+    private $eventService;
+
+    public function __construct()
+    {
+        $this->eventService = new EventService();
+    }
+
     public function postRegister(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -21,28 +27,24 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
+            // Alert::error("Gagal Mendaftar", "Sepertinya input ada yang kurang tepat.");
             return redirect('/register')
                 ->withInput()
-                ->withErrors($validator);
+                ->withErrors($validator)
+                ->with(['type' => "error", 'message' => 'Sepertinya input ada yang kurang tepat.']);
         }
-        $role = "participant";
-        $status = 1;
-        $photo = "images/profile/photo/default.svg";
 
-        $data = new User();
-        $data->name = $request->firstname . ' ' . $request->lastname;
-        $data->email = $request->email;
-        $data->status = $status;
-        $data->role = $role;
-        $data->photoProfile = $photo;
+        $result = $this->eventService->authRegis($request);
 
-        if ($request->password) {
-            $data->password = Hash::make($request->password);
+        if ($result) {
+            // Alert::success('Register Success', 'Please Login.');
+            return redirect('login')->with(['type' => "success", 'message' => 'Registrasi berhasil. Silahkan login.']);
         }
-        $data->save();
 
-        Alert::success('Register Success', 'Please Login.');
-        return redirect('login');
+        // Alert::error('Register Gagal', 'Mohon cek kembali data Anda');
+        return redirect('/register')
+            ->withInput()
+            ->with(['type' => "error", 'message' => 'Register Gagal. Mohon cek kembali data Anda']);
     }
 
     public function getLogin()
@@ -65,34 +67,64 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return redirect('/login')
                 ->withInput()
-                ->withErrors($validator);
+                ->withErrors($validator)
+                ->with(['type' => "error", 'message' => 'Login tidak berhasil. Input kurang tepat.']);
         };
 
-        $temp = Auth::attempt([
-            'email' =>  $request->email,
-            'password' => $request->password
-        ]);
+        $result = $this->eventService->authLogin($request);
 
-        if ($temp) {
-            // dd(Auth::user()->status);
-            if(Auth::user()->status == 1 || Auth::user()->status == 3){
-                // dd("yooo");
+        if ($result) {
+            if (auth()->user()->role == 'admin') {
+                return redirect('/admin');
+            } elseif (Auth::user()->status == 1 || Auth::user()->status == 3) {
                 return redirect('/home');
             }
-            
-            Alert::error('Akun tidak ditemukan', 'Silahkan coba lagi');
-            return view('auth.login');
-            // dd(Auth::user()->status == 1 || Auth::user()->status == 3);
         }
-        
-        Alert::error('Email atau password salah', 'Silahkan coba lagi');
-        return redirect('/login');
-        
+
+        // Alert::error('Email atau password salah', 'Silahkan coba lagi');
+        return redirect('/login')->with(['type' => "error", 'message' => 'Email atau password salah. Silahkan coba lagi']);;
     }
-    
+
     public function logout()
     {
         Auth::logout();
         return redirect('/login');
+    }
+
+    public function getForgot()
+    {
+        return view('auth.forgot');
+    }
+
+    public function postForgot(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users',
+        ]);
+
+        $view = 'auth.verify';
+        $subject = 'Reset Password';
+
+        $this->eventService->authForgot($request, $view, $subject);
+
+        Alert::toast('Silahkan cek email Anda');
+        return back();
+    }
+
+    public function getReset($email, $token)
+    {
+        return view('auth.reset', ['token' => $token, 'email' => $email]);
+    }
+
+    public function postReset(Request $request)
+    {
+        $result = $this->eventService->authReset($request);
+
+        if ($result) {
+            return redirect('/login')->with('message', 'Your password has been changed!');
+        }
+
+        Alert::toast('Gagal ganti password, silahkan coba lagi');
+        return back();
     }
 }
